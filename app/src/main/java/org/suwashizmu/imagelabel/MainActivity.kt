@@ -1,5 +1,6 @@
 package org.suwashizmu.imagelabel
 
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Log
@@ -8,6 +9,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.ml.naturallanguage.FirebaseNaturalLanguage
 import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateLanguage
@@ -26,9 +28,20 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        setup()
+        val imageId = intent.getIntExtra("imageId", -1)
+        if (imageId == -1) {
+            showImageSelector()
+            return
+        }
 
-        val bitmap = BitmapFactory.decodeResource(resources, R.drawable._004)
+        retryButton.setOnClickListener {
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+        }
+
+        setupML()
+
+        val bitmap = BitmapFactory.decodeResource(resources, imageId)
         val image = FirebaseVisionImage.fromBitmap(bitmap)
 
         val labeler = FirebaseVision.getInstance().onDeviceImageLabeler
@@ -98,7 +111,7 @@ class MainActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    private fun setup() {
+    private fun setupML() {
         val options = FirebaseTranslatorOptions.Builder()
             .setSourceLanguage(FirebaseTranslateLanguage.EN)
             .setTargetLanguage(FirebaseTranslateLanguage.JA)
@@ -109,7 +122,7 @@ class MainActivity : AppCompatActivity() {
         englishGermanTranslator.downloadModelIfNeeded()
             .addOnSuccessListener {
                 translatorCompleted = true
-                Toast.makeText(this, "download success", Toast.LENGTH_SHORT).show()
+//                Toast.makeText(this, "download success", Toast.LENGTH_SHORT).show()
             }
             .addOnFailureListener { e ->
                 e.printStackTrace()
@@ -133,4 +146,39 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show()
             }
     }
+
+    private fun showImageSelector() {
+
+        val items = arrayOf(
+            "001",
+            "002",
+            "003",
+            "004",
+            "005",
+            "006",
+            "007",
+            "008"
+        )
+
+        val idMap = mapOf(
+            "001" to R.drawable._001,
+            "002" to R.drawable._002,
+            "003" to R.drawable._003,
+            "004" to R.drawable._004,
+            "005" to R.drawable._005,
+            "006" to R.drawable._006,
+            "007" to R.drawable._007,
+            "008" to R.drawable._008
+        )
+
+        AlertDialog.Builder(this)
+            .setTitle("SelectImageId")
+            .setItems(items) { _, which ->
+                startActivity(Intent(this, MainActivity::class.java).apply {
+                    putExtra("imageId", idMap[items[which]])
+                })
+                finish()
+            }.show()
+    }
+
 }
